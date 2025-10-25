@@ -24,29 +24,39 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import Image from "next/image";
 
-const loginSchema = z.object({
-  email: z.email("Please enter a valid email"),
-  password: z.string().min(1, "Password is required"),
-});
+const registerSchema = z
+  .object({
+    email: z.email("Please enter a valid email"),
+    password: z.string().min(1, "Password is required"),
+    confirmPassword: z.string().min(1, "Confirm Password is required"),
+  })
+  .refine((data) => data.password == data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
-type LoginSchemaType = z.infer<typeof loginSchema>;
+type RegisterSchemaType = z.infer<typeof registerSchema>;
 
-const LoginForm = () => {
+const RegisterForm = () => {
   const router = useRouter();
-  const form = useForm<LoginSchemaType>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<RegisterSchemaType>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
-  const submitHandler = async (values: LoginSchemaType) => {
-    await authClient.signIn.email(
+  const submitHandler = async (values: RegisterSchemaType) => {
+    await authClient.signUp.email(
       {
+        name: values.email,
         email: values.email,
         password: values.password,
+        callbackURL: "/",
       },
       {
         onSuccess: () => {
@@ -57,16 +67,17 @@ const LoginForm = () => {
         },
       }
     );
+    console.log(values);
   };
 
   const isPending = form.formState?.isSubmitting;
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <Card className="shadow-none border-0">
         <CardHeader className="text-center">
-          <CardTitle>Welcome Back</CardTitle>
-          <CardDescription>Login to continue</CardDescription>
+          <CardTitle>Get Started</CardTitle>
+          <CardDescription>Create your account to get started</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -80,6 +91,12 @@ const LoginForm = () => {
                     type="button"
                     disabled={isPending}
                   >
+                    <Image
+                      src="/logo/github.svg"
+                      width={18}
+                      height={18}
+                      alt="Github logo"
+                    />
                     Continue with Github
                   </Button>
                   <Button
@@ -88,6 +105,12 @@ const LoginForm = () => {
                     type="button"
                     disabled={isPending}
                   >
+                    <Image
+                      src="/logo/google.svg"
+                      width={18}
+                      height={18}
+                      alt="Google logo"
+                    />
                     Continue with Google
                   </Button>
                 </div>
@@ -102,6 +125,7 @@ const LoginForm = () => {
                         <FormControl>
                           <Input
                             type="email"
+                            autoFocus
                             placeholder="john@example.com"
                             {...field}
                           />
@@ -129,18 +153,36 @@ const LoginForm = () => {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="********"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <Button className="w-full" type="submit" disabled={isPending}>
-                    Login
+                    Register
                   </Button>
                 </div>
 
                 <div className="text-center text-sm">
-                  Don't have an account ?{" "}
+                  Already have an account ?{" "}
                   <Link
-                    href="/signup"
+                    href="/login"
                     className="underline underline-offset-4 font-medium"
                   >
-                    Create One
+                    Login
                   </Link>
                 </div>
               </div>
@@ -151,4 +193,4 @@ const LoginForm = () => {
     </div>
   );
 };
-export default LoginForm;
+export default RegisterForm;
